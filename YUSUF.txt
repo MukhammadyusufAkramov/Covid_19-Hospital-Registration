@@ -1,0 +1,1239 @@
+﻿
+FUNCTION Menu( WrongInput <- False, WrongText <- "Wrong Input" ):
+    ClearConsole()
+    IF ( WrongInput ):
+        OUTPUT  "=============", WrongText, "============="
+    ELSE:
+        OUTPUT  "\n\n\n" 
+    ENDIF
+    OUTPUT  " Management System of the Hospital with COVID-19 Patients \n |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|" 
+    OUTPUT  " 1.  Add New Patient \n 2.  Change Patient Data \n 3.  Record/Update Test Details" 
+    OUTPUT  " 4.  Show Statistics \n 5.  Patient Data Search" 
+    OUTPUT  " x.  Exit \n" 
+    enPut <- input (" Enter a number : ")
+    # check entered input
+    IF ( enPut = "1" ):
+        currentPID <- 0
+        for items in ParseFile( "Database.txt" ):
+            IF ( int( items[0] ) > currentPID ):
+                currentPID <- int( items[0] )
+            ENDIF
+        ENDFOR
+        currentPID += 1
+        # call ChangeDetails AND add list to file
+        temporaryList <- ChangeDetails( [ currentPID, "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-" ] )
+        IF ( temporaryList ):
+            CreateText( "Database.txt", ParseFile( "Database.txt" ) + [ temporaryList ] )
+            IF not( Menu( WrongInput <- True, WrongText <- "Record successfully modified" ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    ELSEIF ( enPut = "2" ):
+        # search
+        temporaryList <- Search( ParseFile( "Database.txt" ) )
+        IF ( temporaryList ):
+            # call ChangeDetails with list
+            temporaryBigList <- ParseFile( "Database.txt" )
+            temporaryList <- ChangeDetails( temporaryList )
+            IF ( temporaryList ):
+                # replace list acordind to PID
+                for n in range( len( temporaryBigList ) ):
+                    IF ( temporaryList[0] = temporaryBigList[n][0] ):
+                        temporaryBigList[n] <- temporaryList
+                    ENDIF
+                ENDFOR
+                CreateText( "Database.txt", temporaryBigList )
+                IF not( Menu( WrongInput <- True, WrongText <- "Record successfully modified" ) ):
+                    RETURN False
+            ENDIF
+                ENDIF
+        ELSEIF ( temporaryList = None ):
+            IF not( Menu( WrongInput <- True, WrongText <- "No Entries found for search term" ) ):
+                                                                           ENDFOR
+                RETURN False
+            ENDIF
+        ELSEIF ( temporaryList = False ):
+            IF not( Menu( WrongInput <- True, WrongText <- "Wrong search category" ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    ELSEIF ( enPut = "3" ):
+        # search
+        temporaryList <- Search( ParseFile( "Database.txt" ) )
+        IF ( temporaryList ):
+            # call ChangeDetails with found list
+            temporaryBigList <- ParseFile( "Database.txt" )
+            temporaryList <- ChangeResults( temporaryList )
+            IF( temporaryList ):
+                # replace list acordind to PID
+                for n in range( len( temporaryBigList ) ):
+                    IF ( temporaryList[0] = temporaryBigList[n][0] ):
+                        temporaryBigList[n] <- temporaryList
+                    ENDIF
+                ENDFOR
+                CreateText( "Database.txt", temporaryBigList )
+            ENDIF
+        ELSEIF ( temporaryList = None ):
+            IF not( Menu( WrongInput <- True, WrongText <- "No Entries found for search term" ) ):
+                                                                           ENDFOR
+                RETURN False
+            ENDIF
+        ELSEIF ( temporaryList = False ):
+            IF not( Menu( WrongInput <- True, WrongText <- "Wrong search category" ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    ELSEIF ( enPut = "4" ):
+        ShowStatistics( ParseFile( "Database.txt" ) )
+    ELSEIF ( enPut = "5" ):
+        result <- Search( ParseFile( "Database.txt" ) )
+        IF ( result = None ):
+            IF not( Menu( WrongInput <- True, WrongText <- "Reached end of data" ) ):
+                RETURN False
+            ENDIF
+        ELSEIF ( result = False ):
+            IF not( Menu( WrongInput <- True, WrongText <- "Wrong search category" ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    ELSEIF ( enPut = "x" ):
+        OUTPUT ("Thank you for using Management System of the Hospital with COVID-19 Patients \n|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|")
+                          ENDFOR
+        RETURN False
+    ELSE:
+        IF not( Menu( WrongInput <- True ) ):
+            RETURN False
+    ENDIF
+        ENDIF
+    RETURN True
+# Get a list of lists AND search 
+ENDFUNCTION
+
+FUNCTION Search( givenList, key <- None, value <- None, WrongInput <- False, WrongText <- "Wrong Input, please try again." ):
+    IF ( key = None OR value = None ):
+        OUTPUT  "Search by: PID,CID,Name,Group,Zone,Contact Number,Email" 
+        enPut= input( "Medical History,Blood Group,Height,Weight,Status,T1,T2,T3,Admission: " ).lower()
+        key <- 0
+        dataFields <- ["PID", "CID", "Name", "Group", "Zone", "Contact Number", "Email", "Medical History", "Blood Group", "Height", "Weight", "Status", "T1", "T2", "T3", "Admission"]
+        options <- []
+        sep <- '/'
+        IF ( enPut = "pid" ):
+            key <- 0
+        ELSEIF ( enPut = "cid" ):
+            key <- 1
+        ELSEIF ( enPut = "name" ):
+            key <- 2
+        ELSEIF ( enPut = "group" ):
+            key <- 3
+            options <- [ "ATO", "ACC", "AEO", "SID", "AHS" ]
+        ELSEIF ( enPut = "zone" ):
+            key <- 4
+            options <- [ "A", "B", "C", "D" ]
+        ELSEIF ( enPut = "contact Number" ):
+            key <- 5
+        ELSEIF ( enPut = "email" ):
+            key <- 6
+        ELSEIF ( enPut = "medical history" ):
+            key <- 7
+        ELSEIF ( enPut = "blood group" ):
+            key <- 8
+            options <- [ "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" ]
+        ELSEIF ( enPut = "height" ):
+            key <- 9
+        ELSEIF ( enPut = "weight" ):
+            key <- 10
+        ELSEIF ( enPut = "status" ):
+            key <- 11
+            options <- [ "ACTIVE", "RECOVERED", "DECEASED" ]
+        ELSEIF ( enPut = "t1" ):
+            key <- 12
+            options <- [ "QHNF", "QDFR", "HQFR", "HQNF", "CWFR" ]
+        ELSEIF ( enPut = "t2" ):
+            key <- 13
+            options <- [ "QHNF", "QDFR", "HQFR", "HQNF", "CWFR" ]
+        ELSEIF ( enPut = "t3" ):
+            key <- 14
+            options <- [ "QHNF", "QDFR", "HQFR", "HQNF", "CWFR" ]
+        ELSEIF ( enPut = "admission" ):
+            key <- 15
+            options <- [ "Home", "NW", "ICU" ]
+        ELSE:
+            #wrong input
+            RETURN False 
+        ENDIF
+        pArgs <- ''.join( [ item + sep for item in options ] ).rstrip( sep )
+                                      ENDFOR
+        IF ( pArgs ):
+            pArgs <- " (" + pArgs + ")"
+        ENDIF
+        value <- input( f"Enter a {dataFields[key]}{pArgs}:" ).lower()
+    ENDIF
+    foundList <- []
+    count <- 0
+    for n in range( len( givenList ) ):
+        # find
+        found <- False
+        IF ( value.isdigit() ):
+            IF ( givenList[n][key].lower() = value ):
+                found <- True
+            ENDIF
+        ELSE: # .find() for lenient find, .startswith() for stricter find
+                        ENDFOR
+            IF ( givenList[n][key].lower().find( value ) != -1 ):
+                found <- True
+        ENDIF
+            ENDIF
+        IF ( found = True ):
+            ClearConsole()
+            IF ( WrongInput ):
+                OUTPUT  "=============", WrongText, "=============\n"
+            ELSE:
+                OUTPUT  "\n\n\n"             
+            ENDIF
+            OUTPUT  "Management System of the Hospital with COVID-19 Patients \n |*************************| \n Search \n" 
+            OUTPUT  " 1.  PID : ", givenList[n][0], "\n 2.  CID : ", givenList[n][1], "\n 3.  Name : ", givenList[n][2], "\n 4.  Group : ", givenList[n][3]
+            OUTPUT  " 5.  Zone : ", givenList[n][4], "\n 6.  Contact Number : ", givenList[n][5], "\n 7.  Email : ", givenList[n][6], "\n 8.  Medical History : ", givenList[n][7]
+            OUTPUT  " 9.  Blood Group : ", givenList[n][8], "\n 10. Height : ", givenList[n][9], "\n 11. Weight : ", givenList[n][10], "\n 12. Status : ", givenList[n][11]
+            OUTPUT  " 13. Test 1 : ", givenList[n][12], "\n 14. Test 2 : ", givenList[n][13], "\n 15. Test 3 : ", givenList[n][14], "\n 16. Admission : ", givenList[n][15]
+            OUTPUT  " 14. Test 2 : ", givenList[n][13] 
+            enPut <- input( "\n Is this entry what you were looking for? (\"Y\" to end search / \"N\" to go back):" ).upper()
+                                                                   ENDFOR
+            IF ( enPut = "Y" ):
+                RETURN givenList[n]
+            ELSEIF ( enPut = "N" ):
+                IF not ( Search( givenList[ ( n + 1 ) : None ], key, value ) ):
+                    RETURN None
+                ELSE:
+                    RETURN givenList[n]
+                ENDIF
+            ELSE:
+                IF not ( Search( givenList[ n : None ], key, value, WrongInput <- True ) ):
+                    RETURN None
+                ELSE:
+                    RETURN givenList[n]
+        ENDIF
+            ENDIF
+                ENDIF
+    ENDFOR
+    RETURN None
+ENDFUNCTION
+
+FUNCTION ChangeDetails( givenList, WrongInput <- False, WrongText <- "Wrong Input, please try again." ):
+    ClearConsole()
+    IF ( WrongInput ):
+        OUTPUT  "=============", WrongText, "=============\n"
+    ELSE:
+        OUTPUT  "\n\n\n" 
+        OUTPUT  "Management System of the Hospital with COVID-19 Patients \n |*************************| \n Patient Details Input \n" 
+        OUTPUT  " 1.  PID : ", givenList[0], "\n 2.  Name : ", givenList[2], "\n 3.  Group : ", givenList[3]
+        OUTPUT  " 4.  Zone : ", givenList[4], "\n 5.  Contact Number : ", givenList[5], "\n 6.  Email : ", givenList[6], "\n 7.  Medical History : ", givenList[7] 
+        OUTPUT  " 8.  Blood Group : ", givenList[8], "\n 9. Height : ", givenList[9], "\n 10. Weight : ", givenList[10]
+        OUTPUT  " d.  Done \n x.  Cancel \n\n\n\n" 
+        enPut <- input( "Enter a number to modify its entry : " )
+                                             ENDIF
+    # PID
+    ENDIF
+    IF ( enPut = "1" ):
+        IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "PID cannot be modified" ) ):
+            RETURN False
+        ENDIF
+    # Name
+    ELSEIF ( enPut = "2" ):
+        enPut <- input( "Enter a new Name (x to cancel): " )
+        noCommaInput <- enPut.replace( ',', '' )
+        IF ( enPut = 'x' OR enPut = 'X' ):
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut.isprintable() AND enPut = noCommaInput ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. No Commas allowed in Input." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[2] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Group
+    ELSEIF ( enPut = "3" ):
+        enPut <- input( "Enter a new Group: ATO/ACC/AEO/SID/AHS (x to cancel): " ).upper()
+        allowedGroups <- [ "ATO", "ACC", "AEO", "SID", "AHS" ]
+        IF enPut = 'X':
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut in allowedGroups ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input. Try again. Because, groups must be ATO, ACC, AEO, SID, OR AHS." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[3] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Zone
+    ELSEIF ( enPut = "4" ):
+        enPut <- input( "Enter a new Zone (A/B/C/D) (x to cancel): " ).upper()
+        allowedZones <- [ 'A', 'B', 'C', 'D' ]
+        IF enPut = 'X':
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut in allowedZones ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input. Zones must be A, B, C, OR D." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[4] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Contact Number
+    ELSEIF ( enPut = "5" ):
+        enput <- input( "Enter a new Contact Number (x to cancel): " )
+        digits <- enPut.replace( '-', '' ).replace( '+', '' )
+        IF ( enPut = 'x' OR enPut = 'X' ):
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( digits.isdigit() AND ( enPut.count( '+' ) <= 1 AND enPut.count( '-' ) <= 1 ) ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. Contact Number should be digits, a dash AND a plus symbol." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[5] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Email
+    ELSEIF ( enPut = "6" ):
+        enPut <- input( "Enter a new Email (x to cancel): " )
+        noCommaInput <- enPut.replace( ',', '' )
+        IF ( enPut = 'x' OR enPut = 'X' ):
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut.isprintable() AND enPut = noCommaInput ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. No Commas allowed in Input." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[6] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Medical History
+    ELSEIF ( enPut = "7" ):
+        enPut <- input( "Enter a new Medical History (x to cancel): " )
+        noCommaInput <- enPut.replace( ',', '' )
+        IF ( enPut = 'x' OR enPut = 'X' ):
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut.isprintable() AND enPut = noCommaInput ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. No Commas allowed in Input." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[7] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Blood Group
+    ELSEIF ( enPut = "8" ):
+        enPut <- input( "Enter a new Blood Group: A+/A-/B+/B-/AB+/AB-/O+/O- (x to cancel): " ).upper()
+        allowedBloodGroups <- [ "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" ]
+        IF enPut = 'X':
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut in allowedBloodGroups ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. Blood Groups must be A+, A-, B+, B-, AB+, AB-, O+, OR O-." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[8] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Height
+    ELSEIF ( enPut = "9" ):
+        enPut <- input( "Enter a new Height (x to cancel):" )
+        IF ( enPut = 'x' OR enPut = 'X' ):
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut.isdigit() ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. Height must be a positive number." ) ):
+                RETURN False
+            ENDIF
+        ELSEIF ( enPut.isdigit() ):
+            IF ( int( enPut ) <= 0 ):
+                IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. Height must be a positive number." ) ):
+                    RETURN False
+                ENDIF
+            ELSE:
+                givenList[9] <- enPut
+                IF not( ChangeDetails( givenList ) ):
+                    RETURN False
+        ENDIF
+            ENDIF
+                ENDIF
+    # Weight
+    ELSEIF ( enPut = "10" ):
+        enPut <- input( "Enter a new Weight (x to cancel):" )
+        IF ( enPut = 'x' OR enPut = 'X' ):
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+            ENDIF
+        ELSEIF not( enPut.isdigit() ):
+            IF not( ChangeDetails( givenList, WrongInput <- True, WrongText <- "Wrong Input, Try again. Weight must be a positive number." ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            givenList[10] <- enPut
+            IF not( ChangeDetails( givenList ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    ELSEIF ( enPut = "d" ):
+        IF ( givenList[3] = '-' OR givenList[4] = '-' OR ( givenList[5] = '-' AND givenList[6] = '-' ) ):
+                                                                                                ENDFOR
+                RETURN False
+            ENDIF
+        ELSE:
+            pass
+        ENDIF
+    ELSEIF ( enPut = 'x' OR enPut = 'X' ):
+        RETURN False
+    ELSE:
+        IF not( ChangeDetails( givenList, WrongInput <- True ) ):
+            RETURN False
+    ENDIF
+        ENDIF
+    RETURN givenList
+# To "write" to the "filename" file, using "sep" as separator 
+ENDFUNCTION
+
+FUNCTION CreateText( filename, toWrite, sep <- ',' ):
+    with open( filename, 'w' ) as dataFile:
+        for lines in toWrite:
+            dataFile.write( ''.join( [ ( str( item ) + sep ) for item in lines ] ).rstrip( sep ) + '\n' )
+        ENDFOR
+                                                             ENDFOR
+# Clear console
+ENDFUNCTION
+
+FUNCTION ClearConsole():
+    try:
+        os.get_terminal_size()
+        IF( os.name = "nt" ):
+            os.system( "cls" )
+        ELSE:
+            os.system( "clear" )
+        ENDIF
+    except:
+        # do nothing
+        pass
+# Return a list of each record
+ENDFUNCTION
+
+FUNCTION ParseFile( filename, sep <- ',' ):
+    temporaryList <- []
+    with open( filename, 'r' ) as dataFile:
+        for line in dataFile:
+            line <- line.rstrip( '\n' ) # right strip any newline characters
+            temporaryList.append( line.split( sep ) )
+        ENDFOR
+    RETURN temporaryList
+ENDFUNCTION
+
+FUNCTION ChangeResults( givenList, WrongInput <- False, WrongText <- "Wrong Input, Try again." ):
+    allowPreviousTestModification <- False
+                        ENDIF
+    ClearConsole()
+    IF ( WrongInput ):
+        OUTPUT  "=============", WrongText, "============="
+    ELSE:
+        OUTPUT  "\n\n\n" 
+        OUTPUT  " Management System of the Hospital with COVID-19 Patients \n |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| \n Test Result Details \n" 
+        OUTPUT  " 1.  PID : ", givenList[n][0], "\n 2.  CID : ", givenList[n][1], "\n 3.  Name : ", givenList[n][2], "\n 4.  Group : ", givenList[n][3]
+        OUTPUT  " 5.  Zone : ", givenList[n][4], "6.  Status : ", givenList[11], "7.  Test 1 : ", givenList[12], "8.  Test 2 : ", givenList[13]
+        OUTPUT  " 9.  Test 3 : ", givenList[14], "10.  Admission : ", givenList[15] 
+        OUTPUT  " d.  Done" , "x.  Cancel \n\n\n" 
+        enPut <- input( " Enter a number to modify its entry : " )
+    ENDIF
+                                              ENDIF
+    IF ( enPut = "1" ):
+        IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "PID cannot be modified" ) ):
+            RETURN False
+        ENDIF
+    ELSEIF ( enPut = "2" ):
+        IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "CID cannot be modified" ) ):
+            RETURN False
+        ENDIF
+    ELSEIF ( enPut = "3" ):
+        IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Please use the Patient Details Modification interface to modify this field" ) ):
+            RETURN False
+        ENDIF
+    ELSEIF ( enPut = "4" ):
+        IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Please use the Patient Details Modification interface to modify this field" ) ):
+            RETURN False
+        ENDIF
+    ELSEIF ( enPut = "5" ):
+        IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Please use the Patient Details Modification interface to modify this field" ) ):
+            RETURN False
+        ENDIF
+    # Status
+    ELSEIF ( enPut = "6" ):
+        IF ( givenList[1] = "-" ):
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Status cannot be modified unless patient has been tested positive" ) ):
+                RETURN False
+            ENDIF
+        ELSE:
+            enPut <- input( "Enter a new Status: RECOVERED / DECEASED (x to cancel): " ).upper()
+            IF ( enPut = "RECOVERED" ):
+                givenList[11] <- "RECOVERED"
+                IF not( ChangeResults( givenList ) ):
+                    RETURN False
+                ENDIF
+            ELSEIF ( enPut = "DECEASED" ):
+                givenList[11] <- "DECEASED"
+                IF not( ChangeResults( givenList ) ):
+                    RETURN False
+                ENDIF
+            ELSEIF ( enPut = "X" ):
+                IF not( ChangeResults( givenList ) ):
+                    RETURN False
+                ENDIF
+            ELSE:
+                IF not( ChangeResults( givenList, WrongInput <- True ) ):
+                    RETURN False
+        ENDIF
+            ENDIF
+                ENDIF
+    # Test 1 / 12
+    ELSEIF ( enPut = "7" ):
+        validTestResults <- []
+        sep <- '/'
+        IF ( givenList[3] = "ATO" OR givenList[3] = "ACC" OR givenList[3] = "AEO" ):
+            validTestResults <- [ "QHNF", "QDFR" ]
+        ELSEIF ( givenList[3] = "SID" ):
+            validTestResults <- [ "QHNF", "HQFR" ]
+        ELSEIF ( givenList[3] = "AHS" ):
+            validTestResults <- [ "HQNF", "CWFR" ]
+        ENDIF
+        IF ( allowPreviousTestModification ):
+            # IF either T2 OR T3 is set
+              ENDIF
+            IF ( givenList[13] != "-" OR givenList[14] != "-" ):
+                enPut <- input( "Updating T1 will clear any preexisting data in T2 AND T3. Proceed? (Y/N):" ).upper()
+                IF ( enPut = "Y" ):
+                    # clear T2 AND T3, restore status
+                    givenList[11] <- "-"
+                    givenList[13] <- "-"
+                    givenList[14] <- "-"
+                    OUTPUT  f"Enter a new Test Result( { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } ) (x to cancel):" 
+                                                                              ENDFOR
+                    enPut <- input().upper()
+                    IF ( enPut = validTestResults[0] ): # positive
+                        givenList[12] <- validTestResults[0]
+                        givenList[11] <- "ACTIVE"
+                        #suitable PID is found
+                        temporaryList <- ParseFile( "Database.txt" )
+                        for lists in temporaryList:
+                            IF ( lists[0] = givenList[0] ):
+                                givenList[1] <- lists[1]
+                                break
+                            ENDIF
+                        #if empty CID, assign new CID                    
+                         ENDIF
+                        ENDFOR
+                        IF ( givenList[1] = "-" ):
+                            curCID <- 0
+                            for items in ParseFile( "Database.txt" ):
+                                IF ( items[1] != "-" ):
+                                    IF ( int( items[1] ) > curCID ):
+                                        curCID <- int( items[1] )
+                                ENDIF
+                                    ENDIF
+                            ENDFOR
+                            curCID += 1
+                            givenList[1] <- str( curCID )
+                        ENDIF
+                        IF not( ChangeResults( givenList ) ):
+                            RETURN False
+                        ENDIF
+                    ELSEIF ( enPut = validTestResults[1] ): # not positive
+                        givenList[1] <- "-" # retract CID
+                        givenList[11] <- "-" # retract Status
+                        givenList[15] <- "-" # retract Admission
+                        givenList[12] <- validTestResults[1]
+                        IF not( ChangeResults( givenList ) ):
+                            RETURN False
+                        ENDIF
+                    ELSEIF ( enPut = "X" ): # cancel
+                        IF not( ChangeResults( givenList ) ):
+                            RETURN False
+                        ENDIF
+                    ELSE: # Wrong input
+                        IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- f"Tests can only be { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } for a patient of this group" ) ):
+                                                                                                                                     ENDFOR
+                            RETURN False
+                    ENDIF
+                        ENDIF
+                ELSEIF ( enPut = "N" ):
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSE:
+                    IF not( ChangeResults( givenList, WrongInput <- True ) ):
+                        RETURN False
+                ENDIF
+                    ENDIF
+            ELSE:
+                OUTPUT  f"Enter a new Test Result( { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } ) (x to cancel):"
+                                                                          ENDFOR
+                enPut <- input().upper()
+                IF ( enPut = validTestResults[0] ): # positive
+                    givenList[12] <- validTestResults[0]
+                    givenList[11] <- "ACTIVE"
+                    #find suitable PID
+                    temporaryList <- ParseFile( "Database.txt" )
+                    for lists in temporaryList:
+                        IF ( lists[0] = givenList[0] ):
+                            givenList[1] <- lists[1]
+                            break
+                        ENDIF
+                    #if empty CID, assign new CID
+                     ENDIF
+                    ENDFOR
+                    IF ( givenList[1] = "-" ):
+                        # get newest CID to be used
+                        curCID <- 0
+                        for items in ParseFile( "Database.txt" ):
+                            IF ( items[1] != "-" ):
+                                IF ( int( items[1] ) > curCID ):
+                                    curCID <- int( items[1] )
+                            ENDIF
+                                ENDIF
+                        ENDFOR
+                        curCID += 1
+                        givenList[1] <- str( curCID )
+                    ENDIF
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = validTestResults[1] ): # not positive
+                    givenList[1] <- "-" # retract CID
+                    givenList[11] <- "-" # retract Status
+                    givenList[15] <- "-" # retract Admission
+                    givenList[12] <- validTestResults[1]
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = "X" ): # cancel
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSE: # Wrong input
+                    IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- f"Tests can only be { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } for a patient of this group" ) ):
+                                                                                                                                 ENDFOR
+                        RETURN False
+            ENDIF
+                ENDIF
+                    ENDIF
+        ELSE:
+            IF ( givenList[1] = "-" ):
+                OUTPUT  f"Enter a new Test Result( { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } ) (x to cancel):" 
+                                                                          ENDFOR
+                enPut <- input().upper()
+                IF ( enPut = validTestResults[0] ): # positive
+                    givenList[12] <- validTestResults[0]
+                    givenList[11] <- "ACTIVE"
+                    #if empty CID, assign new CID
+                     ENDIF
+                    IF ( givenList[1] = "-" ):
+                        # get newest CID to be used
+                        curCID <- 0
+                        for items in ParseFile( "Database.txt" ):
+                            IF ( items[1] != "-" ):
+                                IF ( int( items[1] ) > curCID ):
+                                    curCID <- int( items[1] )
+                            ENDIF
+                                ENDIF
+                        ENDFOR
+                        curCID += 1
+                        givenList[1] <- str( curCID )
+                    ENDIF
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = validTestResults[1] ): # not positive
+                    givenList[12] <- validTestResults[1]
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = "X" ): # cancel
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSE: # Wrong input
+                    IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- f"Tests can only be { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } for a patient of this group" ) ):
+                                                                                                                                 ENDFOR
+                        RETURN False
+                ENDIF
+                    ENDIF
+            ELSE:
+                IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Cannot modify previously set results" ) ):
+                    RETURN False
+        ENDIF
+            ENDIF
+                ENDIF
+    # Test 2 / 13
+    ELSEIF ( enPut = "8" ):
+        validTestResults <- []
+        sep <- '/'
+        IF ( givenList[3] = "ATO" OR givenList[3] = "ACC" OR givenList[3] = "AEO" ):
+            validTestResults <- [ "QHNF", "QDFR" ]
+        ELSEIF ( givenList[3] = "SID" ):
+            validTestResults <- [ "QHNF", "HQFR" ]
+        ELSEIF ( givenList[3] = "AHS" ):
+            validTestResults <- [ "HQNF", "CWFR" ]
+        # IF T1 not set
+        ENDIF
+          ENDIF
+        IF ( givenList[12] = "-" ):
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Test 1 has not been performed yet" ) ):
+                                                                                                     ENDFOR
+                RETURN False
+            ENDIF
+        # IF CID set(positive), T2 not executed
+          ENDIF
+        ELSEIF ( givenList[1] != "-" AND givenList[13] = "-" ):
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "This patient has been tested positive. No further tests are needed." ) ):
+                RETURN False
+            ENDIF
+        ELSEIF ( allowPreviousTestModification ):
+                                  ENDIF
+            # IF T3 is set
+              ENDIF
+            IF ( givenList[14] != "-" ):
+                OUTPUT  "Modifying T1 will clear any preexisting data in T3. Proceed? (Y/N):" 
+                           ENDIF
+                enPut <- input().upper()
+                IF ( enPut = "Y" ):
+                    # clear T3, check again Status
+                    givenList[14] <- "-"
+                    IF ( givenList[12] != "QHNF" AND givenList[12] != "HQNF" ):
+                        givenList[11] <- "-"
+                    ENDIF
+                    OUTPUT  f"Enter a new Test Result( { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } ) (x to cancel):" 
+                                                                              ENDFOR
+                    enPut <- input().upper()
+                    IF ( enPut = validTestResults[0] ): # positive
+                        givenList[13] <- validTestResults[0]
+                        givenList[11] <- "ACTIVE"
+                        #find compability PID
+                        temporaryList <- ParseFile( "Database.txt" )
+                        for lists in temporaryList:
+                            IF ( lists[0] = givenList[0] ):
+                                givenList[1] <- lists[1]
+                                break
+                            ENDIF
+                        #if empty CID, existing ones CID
+                         ENDIF
+                        ENDFOR
+                        IF ( givenList[1] = "-" ):
+                            curCID <- 0
+                            for items in ParseFile( "Database.txt" ):
+                                IF ( items[1] != "-" ):
+                                    IF ( int( items[1] ) > curCID ):
+                                        curCID <- int( items[1] )
+                                ENDIF
+                                    ENDIF
+                            ENDFOR
+                            curCID += 1
+                            givenList[1] <- str( curCID )
+                        ENDIF
+                        IF not( ChangeResults( givenList ) ):
+                            RETURN False
+                        ENDIF
+                    ELSEIF ( enPut = validTestResults[1] ): # non-positive
+                        givenList[1] <- "-" # take back CID
+                        givenList[11] <- "-" # take back Status
+                        givenList[15] <- "-" # take back Admission
+                        givenList[13] <- validTestResults[1]
+                        IF not( ChangeResults( givenList ) ):
+                            RETURN False
+                        ENDIF
+                    ELSEIF ( enPut = "X" ): # cancel
+                        IF not( ChangeResults( givenList ) ):
+                            RETURN False
+                        ENDIF
+                    ELSE: # Wrong input
+                        IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- f"Tests can only be { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } for a patient of this group" ) ):
+                                                                                                                                     ENDFOR
+                            RETURN False
+                    ENDIF
+                        ENDIF
+                ELSEIF ( enPut = "N" ):
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSE:
+                    IF not( ChangeResults( givenList, WrongInput <- True ) ):
+                        RETURN False
+                ENDIF
+                    ENDIF
+            ELSE:
+                OUTPUT  f"Enter a new Test Result( { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } ) (x to cancel):" 
+                                                                          ENDFOR
+                enPut <- input().upper()
+                IF ( enPut = validTestResults[0] ): # positive
+                    givenList[13] <- validTestResults[0]
+                    givenList[11] <- "ACTIVE"
+                    #searching for PID
+                               ENDFOR
+                    temporaryList <- ParseFile( "Database.txt" )
+                    for lists in temporaryList:
+                        IF ( lists[0] = givenList[0] ):
+                            givenList[1] <- lists[1]
+                            break
+                        ENDIF
+                    #if empty CID, existing ones CID
+                     ENDIF
+                    ENDFOR
+                    IF ( givenList[1] = "-" ):
+                        curCID <- 0
+                        for items in ParseFile( "Database.txt" ):
+                            IF ( items[1] != "-" ):
+                                IF ( int( items[1] ) > curCID ):
+                                    curCID <- int( items[1] )
+                            ENDIF
+                                ENDIF
+                        ENDFOR
+                        curCID += 1
+                        givenList[1] <- str( curCID )
+                    ENDIF
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = validTestResults[1] ): # non-positive
+                    givenList[1] <- "-" # take back CID
+                    givenList[11] <- "-" # take back Status
+                    givenList[15] <- "-" # take back Admission
+                    givenList[13] <- validTestResults[1]
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = "X" ): # cancelation
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSE: # Wrong input
+                    IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- f"Tests can only be { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } for a patient of this group" ) ):
+                                                                                                                                 ENDFOR
+                        RETURN False
+            ENDIF
+                ENDIF
+                    ENDIF
+        ELSE:
+            IF ( givenList[1] = "-" ):
+                OUTPUT  f"Enter a new Test Result( { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } ) (x to cancel):" 
+                                                                          ENDFOR
+                enPut <- input().upper()
+                IF ( enPut = validTestResults[0] ): # positive
+                    givenList[13] <- validTestResults[0]
+                    givenList[11] <- "ACTIVE"
+                    #if empty CID, existing ones CID
+                     ENDIF
+                    IF ( givenList[1] = "-" ):
+                        curCID <- 0
+                        for items in ParseFile( "Database.txt" ):
+                            IF ( items[1] != "-" ):
+                                IF ( int( items[1] ) > curCID ):
+                                    curCID <- int( items[1] )
+                            ENDIF
+                                ENDIF
+                        ENDFOR
+                        curCID += 1
+                        givenList[1] <- str( curCID )
+                    ENDIF
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = validTestResults[1] ): # no-positive
+                    givenList[13] <- validTestResults[1]
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = "X" ): # cancel
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSE: # Wrong input
+                    IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- f"Tests can only be { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } for a patient of this group" ) ):
+                                                                                                                                 ENDFOR
+                        RETURN False
+                ENDIF
+                    ENDIF
+            ELSE:
+                IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Cannot update previously set results" ) ):
+                    RETURN False
+        ENDIF
+            ENDIF
+                ENDIF
+    # Test 3 / 14
+    ELSEIF ( enPut = "9" ):
+        validTestResults <- []
+        sep <- '/'
+        IF ( givenList[3] = "ATO" OR givenList[3] = "ACC" OR givenList[3] = "AEO" ):
+            validTestResults <- [ "QHNF", "QDFR" ]
+        ELSEIF ( givenList[3] = "SID" ):
+            validTestResults <- [ "QHNF", "HQFR" ]
+        ELSEIF ( givenList[3] = "AHS" ):
+            validTestResults <- [ "HQNF", "CWFR" ]
+        # IF T1 not set
+        ENDIF
+          ENDIF
+        IF ( givenList[12] = "-" ):
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Test 1 has`t been performed yet" ) ):
+                                                                                                   ENDFOR
+                RETURN False
+            ENDIF
+        # IF T2 not set
+          ENDIF
+        ELSEIF ( givenList[13] = "-" ):
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Test 2 has`t been performed yet" ) ):
+                                                                                                   ENDFOR
+                RETURN False
+            ENDIF
+        # IF CID set (positive), T3 not executed
+          ENDIF
+        ELSEIF ( givenList[1] != "-" AND givenList[14] = "-" ):
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "This patient has been tested positive. No further tests are needed." ) ):
+                RETURN False
+            ENDIF
+        ELSEIF ( allowPreviousTestModification OR not ( givenList[1] != "-" ) ):
+                                  ENDIF
+            OUTPUT  f"Enter a new Test Result( { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } ) (x to cancel):" 
+                                                                      ENDFOR
+            enPut <- input().upper()
+            IF ( enPut = validTestResults[0] ): # positive
+                givenList[14] <- validTestResults[0]
+                givenList[11] <- "ACTIVE"
+                #find matching PID
+                temporaryList <- ParseFile( "Database.txt" )
+                for lists in temporaryList:
+                    IF ( lists[0] = givenList[0] ):
+                        givenList[1] <- lists[1]
+                        break
+                    ENDIF
+                #if empty CID, assign new CID
+                 ENDIF
+                ENDFOR
+                IF ( givenList[1] = "-" ):
+                    curCID <- 0
+                    for items in ParseFile( "Database.txt" ):
+                        IF ( items[1] != "-" ):
+                            IF ( int( items[1] ) > curCID ):
+                                curCID <- int( items[1] )
+                        ENDIF
+                            ENDIF
+                    ENDFOR
+                    curCID += 1
+                    givenList[1] <- str( curCID )
+                ENDIF
+                IF not( ChangeResults( givenList ) ):
+                    RETURN False
+                ENDIF
+            ELSEIF ( enPut = validTestResults[1] ): # non-positive
+                givenList[1] <- "-" # take back CID
+                givenList[11] <- "-" # take back Status
+                givenList[15] <- "-" # take back Admission
+                givenList[14] <- validTestResults[1]
+                IF not( ChangeResults( givenList ) ):
+                    RETURN False
+                ENDIF
+            ELSEIF ( enPut = "X" ): # cancelation
+                IF not( ChangeResults( givenList ) ):
+                    RETURN False
+                ENDIF
+            ELSE: # Wrong input
+                IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- f"Tests can only be { ''.join( [ item + sep for item in validTestResults ] ).rstrip( sep ) } for a patient of this group" ) ):
+                                                                                                                             ENDFOR
+                    RETURN False
+            ENDIF
+                ENDIF
+        ELSE:
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Cannot update previously set results" ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    # Admission / 15
+    ELSEIF ( enPut = "10" ):
+        IF ( givenList[1] != "-" ):
+            IF ( givenList[12] = "HQNF" OR givenList[13] = "HQNF" OR givenList[14] = "HQNF" ): # IF HQNF, auto set to home
+                givenList[15] <- "Home"
+            ELSE:
+                #take input
+                OUTPUT  f"Enter a new Admission location ( NW/ICU ) (x to cancel):" 
+                enPut <- input().upper()
+                IF ( enPut = "NW" ):
+                    givenList[15] <- "NW"
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = "ICU" ):
+                    givenList[15] <- "ICU"
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSEIF ( enPut = "X" ):
+                    IF not( ChangeResults( givenList ) ):
+                        RETURN False
+                    ENDIF
+                ELSE:
+                    IF not( ChangeResults( givenList, WrongInput <- True ) ):
+                        RETURN False
+            ENDIF
+                ENDIF
+                    ENDIF
+        ELSE:
+            IF not( ChangeResults( givenList, WrongInput <- True, WrongText <- "Patient is not tested positive. Cannot set Admission location" ) ):
+                RETURN False
+        ENDIF
+            ENDIF
+    #check IF Admission is filled
+           ENDIF
+    ELSEIF ( enPut = "d" ):
+        IF ( givenList[11] != "-" ):
+            IF ( givenList[15] = "-" ):
+                                                                                                    ENDFOR
+                    RETURN False
+                ELSE:
+                    RETURN givenList
+        ENDIF
+            ENDIF
+                ENDIF
+    ELSEIF ( enPut = "x" ):
+        RETURN False
+    ELSE:
+        IF not( ChangeResults( givenList, WrongInput <- True ) ):
+            RETURN False
+    ENDIF
+        ENDIF
+    RETURN givenList
+# Takes a list of listings
+ENDFUNCTION
+
+FUNCTION CountResults( givenList ):
+    T1 <- 0
+    T2 <- 0
+    T3 <- 0
+    for items in givenList:
+        IF( items[12] != "-" ):
+            T1 += 1
+        ENDIF
+        IF( items[13] != "-" ):
+            T2 += 1
+        ENDIF
+        IF( items[14] != "-" ):
+            T3 += 1
+        ENDIF
+    ENDFOR
+    ClearConsole()
+    OUTPUT "\n\n\n"
+    OUTPUT  " Management System of the Hospital with COVID-19 Patients \n |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| \n Statistics \n 1. Total Test 1 Performed :", T1
+                                                                                                                                                ENDFOR
+    OUTPUT  " 2. Total Test 2 Performed :", T2, "\n 3. Total Test 3 Performed :", T3, "\n\n\n\n\n\n\n\n\n\n\n\n\n Press [ENTER] to RETURN to Statistics menu"
+                                ENDFOR
+    enPut <- input()
+# Returns True when done
+ENDFUNCTION
+
+FUNCTION ShowLists( givenList, page, WrongInput <- False, WrongText <- "Wrong Input, Try again" ):
+    maxPage <- int( ( len( givenList ) - 1 ) / 15 ) + 1
+    ClearConsole()
+    IF ( WrongInput ):
+        OUTPUT  "=============", WrongText, "============="
+        OUTPUT  "" 
+    ELSE:
+        OUTPUT  "\n\n\n" 
+        OUTPUT  " Management System of the Hospital with COVID-19 Patients \n |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|" 
+        OUTPUT  " Statistics (Data might be truncated for display purposes, please use Search for full data)"
+                                                     ENDFOR
+             ENDFOR
+        OUTPUT  "PID CID Name       Grp. Zne. Contact  Email    Med. Hist.   Bld. Ht.  Wt.  Sta. T1   T2   T3   Admission" 
+    ENDIF
+    spacings <- [ 3, 3, 10, 4, 4, 8, 8, 12, 4, 4, 4, 4, 4, 4, 4, 8 ]
+    for n in range( ( page - 1) * 15, page * 15 ):
+        IF ( n >= len( givenList ) ):
+            IF ( n = 0 ):
+                OUTPUT  "\n\n ~~~~~~~~~~~~~~ NO DATA ~~~~~~~~~~~~~~" 
+            ELSE:
+                OUTPUT  "" 
+            ENDIF
+        ELSE:
+            for o in range( 16 ):
+                OUTPUT  givenList[ n ][ o ][ 0 : spacings[ o ] ].ljust( spacings[ o ] ), end <- '' 
+                IF ( o < 15 ):
+                    OUTPUT  ' ', end <- '' 
+                ELSE:
+                    OUTPUT  '' 
+                    OUTPUT  "\n\n" 
+                    OUTPUT  f"[Page { page } of { maxPage }] \"<\" Previous Page = \">\" Next Page = \"x\" Done Viewing :", end <- ' ' 
+        ENDIF
+                ENDIF
+    ENDFOR
+            ENDFOR
+    enPut <- input().upper()
+    IF ( enPut = "<" ):
+        IF ( page > 1 ):
+            page -= 1
+            IF ( ShowLists( givenList, page ) ):
+                RETURN True
+            ENDIF
+        else :
+            IF ( ShowLists( givenList, page, WrongInput <- True, WrongText <- "Cannot move page left" ) ):
+                RETURN True
+        ENDIF
+            ENDIF
+    ELSEIF ( enPut = ">" ):
+        IF ( page < maxPage ):
+            page += 1
+            IF ( ShowLists( givenList, page ) ):
+                RETURN True
+            ENDIF
+        else :
+            IF ( ShowLists( givenList, page, WrongInput <- True, WrongText <- "Cannot move page right" ) ):
+                RETURN True
+        ENDIF
+            ENDIF
+    ELSEIF ( enPut = "X" ):
+        RETURN True
+    ELSE:
+        IF ( ShowLists( givenList, page, WrongInput <- True ) ):
+            RETURN True
+    ENDIF
+        ENDIF
+    RETURN True
+# Back True when finished
+ENDFUNCTION
+
+FUNCTION ShowStatistics( givenList, WrongInput <- False, WrongText <- "Wrong Input, Try again" ):
+    ClearConsole()
+    IF ( WrongInput ):
+        OUTPUT  "=============", WrongText, "============="
+    ELSE:
+        OUTPUT  "\n\n\n" 
+        OUTPUT  " Management System of the Hospital with COVID-19 Patients \n |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| \n Statistics \n" 
+        OUTPUT  " 1.  Tests Performed (for T1, T2, AND T3) \n 2.  Patients Tested \n 3.  Recovered Cases" 
+                              ENDFOR
+        OUTPUT  " 4.  Positively Tested Patients (by group) \n 5.  Active Cases (by zone) \n 6.  Deceased Patients' Records" 
+        OUTPUT  " x.  Cancel \n\n\n\n\n\n\n\n\n" 
+        enPut <- input( "Enter a number : " )
+    ENDIF
+    IF ( enPut = "1" ):
+        CountResults( givenList )
+        IF ( ShowStatistics( givenList ) ):
+            RETURN True
+        ENDIF
+    ELSEIF ( enPut = "2" ):
+        temporaryList <- []
+        for items in givenList:
+            IF ( items[12] != "-" ):
+                temporaryList.append( items )
+            ENDIF
+        ENDFOR
+        ShowLists( temporaryList, 1 )
+        IF ( ShowStatistics( givenList ) ):
+            RETURN True
+        ENDIF
+    ELSEIF ( enPut = "3" ):
+        temporaryList <- []
+        for items in givenList:
+            IF ( items[11] = "RECOVERED" ):
+                temporaryList.append( items )
+            ENDIF
+        ENDFOR
+        ShowLists( temporaryList, 1 )
+        IF ( ShowStatistics( givenList ) ):
+            RETURN True
+        ENDIF
+    ELSEIF ( enPut = "4" ):
+        enPut <- input( "Enter a Group (ATO/ACC/AEO/SID/AHS) (x to cancel):" ).upper()
+        allowedGroups <- [ "ATO", "ACC", "AEO", "SID", "AHS" ]
+        IF enPut = 'x':
+            IF ( ShowStatistics( givenList ) ):
+                RETURN True
+            ENDIF
+        ELSEIF not( enPut in allowedGroups ):
+            IF ( ShowStatistics( givenList, WrongInput <- True, WrongText <- "Wrong Input. Groups must be ATO, ACC, AEO, SID, OR AHS." ) ):
+                RETURN True
+            ENDIF
+        ELSE:
+            temporaryList <- []
+            for items in givenList:
+                IF ( items[1] != "-" AND items[3] = enPut ):
+                    temporaryList.append( items )
+                ENDIF
+            ENDFOR
+            ShowLists( temporaryList, 1 )
+        ENDIF
+        IF ( ShowStatistics( givenList ) ):
+            RETURN True
+        ENDIF
+    ELSEIF ( enPut = "5" ):
+        enPut <- input( "Enter a Zone (A/B/C/D) (x to cancel):" ).upper()
+        allowedZones <- [ "A", "B", "C", "D" ]
+        IF enPut = 'x':
+            IF ( ShowStatistics( givenList ) ):
+                RETURN True
+            ENDIF
+        ELSEIF not( enPut in allowedZones ):
+            IF ( ShowStatistics( givenList, WrongInput <- True, WrongText <- "Wrong Input. Zones must be A, B, C, OR D." ) ):
+                RETURN True
+            ENDIF
+        ELSE:
+            temporaryList <- []
+            for items in givenList:
+                IF ( items[11] = "ACTIVE" AND items[4] = enPut ):
+                    temporaryList.append( items )
+                ENDIF
+            ENDFOR
+            ShowLists( temporaryList, 1 )
+        ENDIF
+        IF ( ShowStatistics( givenList ) ):
+            RETURN True
+        ENDIF
+    ELSEIF ( enPut = "6" ):
+        temporaryList <- []
+        for items in givenList:
+            IF ( items[11] = "DECEASED" ):
+                temporaryList.append( items )
+            ENDIF
+        ENDFOR
+        ShowLists( temporaryList, 1 )
+        IF ( ShowStatistics( givenList ) ):
+            RETURN True
+        ENDIF
+    ELSEIF ( enPut = "x" ):
+        RETURN True
+    ELSE:
+        ShowStatistics( givenList, WrongInput <- True )
+    ENDIF
+    RETURN True
+# menu opens
+ENDFUNCTION
+
+while Menu():
+    pass
